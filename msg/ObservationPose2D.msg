@@ -1,2 +1,2 @@
 romea_common_msgs/Pose2D pose
-geometry_msgs/Vector3 level_arm
+geometry_msgs/Vector3 lever_arm
