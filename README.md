@@ -2,21 +2,54 @@
 
 `romea_localisation_msgs` defines the ROS2 messages exchanged between ROMEA localisation plugins and localisation filters.
 
-The package does not implement any algorithm. It provides the common message types used to express localisation observations and localisation status. The conversion helpers are provided by `romea_localisation_utils`, while the filter node is provided by `romea_robot_to_world_localisation_core`.
+The package does not implement any algorithm. It provides the common message types used to express localisation observations and localisation status. The conversion helpers are provided by `romea_localisation_utils`, while localisation filter nodes are provided by packages such as `romea_robot_to_world_localisation_core`, `romea_robot_to_robot_localisation_core` or `romea_robot_to_human_localisation_core`.
 
 ## 1) Concept
 
 The localisation stack uses common ROS2 messages at its boundaries and ROMEA observation messages between plugins and filters:
 
 ```mermaid
-flowchart TD
-  inputs["ROS2 input messages<br/><br/>sensor_msgs/Imu<br/>nmea_msgs/Sentence<br/>nav_msgs/Odometry<br/>..."]
-  plugins["Localisation plugin nodes<br/><br/>convert ROS2 data into typed localisation observations"]
-  observations["romea_localisation_msgs<br/><br/>ObservationTwist2DStamped<br/>ObservationPosition2DStamped<br/>ObservationAngularSpeedStamped<br/>ObservationAttitudeStamped<br/>ObservationCourseStamped<br/>ObservationRangeStamped<br/>..."]
-  filters["Localisation filters"]
-  outputs["ROS2 output messages<br/><br/>nav_msgs/Odometry<br/>geometry_msgs/Pose<br/>tf<br/>..."]
+flowchart LR
+  subgraph ros2_inputs["ROS2 input messages"]
+    inputs["sensor_msgs/msg/Imu<br/>nmea_msgs/msg/Sentence<br/>nav_msgs/msg/Odometry<br/>..."]
+  end
 
-  inputs --> plugins --> observations --> filters --> outputs
+  subgraph plugin_nodes["Localisation plugin nodes"]
+    plugins["convert ROS2 data into typed localisation observations"]
+  end
+
+  subgraph observation_msgs["romea_localisation_msgs"]
+    observations["ObservationTwist2DStamped<br/>ObservationPosition2DStamped<br/>ObservationAngularSpeedStamped<br/>ObservationAttitudeStamped<br/>ObservationCourseStamped<br/>ObservationRangeStamped<br/>..."]
+  end
+
+  subgraph filters["Localisation filters"]
+    filter["localisation filter node"]
+  end
+
+  subgraph ros2_outputs["ROS2 output messages"]
+    outputs["nav_msgs/msg/Odometry<br/>geometry_msgs/msg/Pose<br/>tf<br/>..."]
+  end
+
+  inputs -->|consume| plugins
+  plugins -->|publish| observations
+  observations -->|fuse| filter
+  filter -->|publish| outputs
+
+  classDef ros2 fill:#e8f2ff,stroke:#5b8ec7,color:#111,rx:6,ry:6
+  classDef plugin fill:#eaf7ea,stroke:#5c9f5c,color:#111,rx:6,ry:6
+  classDef msg fill:#fff6d8,stroke:#c9a227,color:#111,rx:6,ry:6
+  classDef filterStyle fill:#f1eaff,stroke:#8b6fc6,color:#111,rx:6,ry:6
+
+  class inputs,outputs ros2
+  class plugins plugin
+  class observations msg
+  class filter filterStyle
+
+  style ros2_inputs fill:#f6faff,stroke:#9abbe3,rx:6,ry:6
+  style plugin_nodes fill:#f7fff7,stroke:#9ecf9e,rx:6,ry:6
+  style observation_msgs fill:#fffaf0,stroke:#dec86b,rx:6,ry:6
+  style filters fill:#faf7ff,stroke:#b8a4dd,rx:6,ry:6
+  style ros2_outputs fill:#f6faff,stroke:#9abbe3,rx:6,ry:6
 ```
 
 Each plugin converts one standard ROS2 sensor or controller stream into one or more `romea_localisation_msgs` observations. Localisation filters subscribe to these observations, fuse them and publish results using standard ROS2 outputs when possible, for example filtered odometry and transforms for robot-to-world localisation.
@@ -54,7 +87,7 @@ The observation payloads carry compact 2D localisation information and the uncer
 | `ObservationPose2D` | 2D pose and lever arm | Covariance in `romea_common_msgs/Pose2D` |
 | `ObservationRange` | Range and antenna positions | Range standard deviation |
 
-The `level_arm` fields describe the position of the physical measurement point with respect to the localisation body frame. For example, a GPS observation is measured at the antenna position, not directly at the robot control point.
+The `lever_arm` fields describe the position of the physical measurement point with respect to the localisation body frame. For example, a GPS observation is measured at the antenna position, not directly at the robot control point.
 
 ## 4) Localisation Status
 
@@ -67,7 +100,7 @@ The `level_arm` fields describe the position of the physical measurement point w
 | `RESET` | The localisation process has been reset |
 | `ABORTED` | The localisation process has stopped because it cannot provide a valid estimate |
 
-This status is used by localisation nodes and helpers to expose the state of the filter lifecycle.
+This status is used by localisation nodes and helpers to expose the state of the localisation lifecycle.
 
 ## 5) Notes
 
@@ -75,8 +108,8 @@ Only the message interfaces listed in `CMakeLists.txt` are currently generated b
 
 ## License
 
-This project is released under the Apache License 2.0.
+This project is released under the Apache License 2.0. See the `LICENSE` file for details.
 
 ## Authors
 
-This package was developed by Jean Laneurit.
+This package was developed by **Jean Laneurit**.
