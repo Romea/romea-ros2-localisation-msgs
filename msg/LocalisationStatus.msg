@@ -1,5 +1,0 @@
-uint8 INIT=0
-uint8 RUNNING=1
-uint8 RESET=2
-uint8 ABORTED=3
-uint8 status
